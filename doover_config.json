@@ -1,51 +1,197 @@
 {
     "eagleio_platform_interface": {
         "name": "eagleio_platform_interface",
-        "display_name": "eagleio-platform-interface",
-        "type": "DEV",
+        "display_name": "Eagle.io Platform Interface",
+        "type": "PRO",
         "visibility": "PUB",
         "allow_many": true,
         "description": "Allows other Doover apps to publish/receive configurable information to/from Eagle.io via the Doover tag system",
         "long_description": "README.md",
         "depends_on": [],
-        "owner_org_key": "FIX-ME",
-        "image_name": "ghcr.io/getdoover/eagleio-platform-interface:main",
-        "container_registry_profile_key": "FIX-ME",
-        "build_args": "--platform linux/amd64,linux/arm64",
+        "handler": "src.eagleio_platform_interface.handler",
+        "lambda_config": {
+            "Runtime": "python3.13",
+            "Timeout": 300,
+            "MemorySize": 128,
+            "Handler": "src.eagleio_platform_interface.handler"
+        },
+        "organisation_id": null,
+        "key": null,
+        "owner_org_id": null,
+        "code_repo_id": null,
+        "container_registry_profile_id": null,
+        "repo_branch": "main",
+        "image_name": null,
+        "icon_url": "https://raw.githubusercontent.com/getdoover/eagleio-platform-interface/main/assets/icon.png",
+        "staging_config": {},
+        "export_config_command": null,
+        "run_command": null,
+        "lambda_arn": null,
         "config_schema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "$id": "",
             "title": "Application Config",
             "type": "object",
             "properties": {
-                "digital_outputs_enabled": {
-                    "title": "Digital Outputs Enabled",
-                    "x-name": "digital_outputs_enabled",
-                    "x-hidden": false,
-                    "type": "boolean",
-                    "default": true
-                },
-                "a_funny_message": {
-                    "title": "A Funny Message",
-                    "x-name": "a_funny_message",
-                    "x-hidden": false,
-                    "type": "string"
-                },
-                "simulator_app_key": {
-                    "format": "doover-application",
-                    "title": "Simulator App Key",
-                    "x-name": "simulator_app_key",
+                "api_key": {
+                    "title": "API Key",
+                    "x-name": "api_key",
                     "x-hidden": false,
                     "type": "string",
-                    "description": "The app key for the simulator"
+                    "x-required": true,
+                    "description": "Eagle.io API key for authentication",
+                    "x-position": 0
+                },
+                "base_url": {
+                    "title": "Base URL",
+                    "x-name": "base_url",
+                    "x-hidden": false,
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "x-required": false,
+                    "description": "Eagle.io API base URL",
+                    "default": "https://api.eagle.io/api/v1",
+                    "x-position": 1
+                },
+                "poll_enabled": {
+                    "title": "Poll Enabled",
+                    "x-name": "poll_enabled",
+                    "x-hidden": false,
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "x-required": false,
+                    "description": "Enable scheduled polling of Eagle.io parameters",
+                    "default": true,
+                    "x-position": 2
+                },
+                "outbound_enabled": {
+                    "title": "Outbound Enabled",
+                    "x-name": "outbound_enabled",
+                    "x-hidden": false,
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "x-required": false,
+                    "description": "Enable pushing tag updates to Eagle.io",
+                    "default": true,
+                    "x-position": 3
+                },
+                "tag_mappings": {
+                    "title": "Tag Mappings",
+                    "x-name": "tag_mappings",
+                    "x-hidden": false,
+                    "type": "array",
+                    "x-required": true,
+                    "description": "List of tag-to-Eagle.io parameter mappings",
+                    "x-position": 4,
+                    "items": {
+                        "title": "Tag Mapping",
+                        "x-name": "tag_mapping",
+                        "x-hidden": false,
+                        "type": "object",
+                        "x-required": true,
+                        "properties": {
+                            "tag_name": {
+                                "title": "Tag Name",
+                                "x-name": "tag_name",
+                                "x-hidden": false,
+                                "type": "string",
+                                "x-required": true,
+                                "description": "Doover tag name to read/write",
+                                "x-position": 1
+                            },
+                            "eagle.io_node_id": {
+                                "title": "Eagle.io Node ID",
+                                "x-name": "eagle.io_node_id",
+                                "x-hidden": false,
+                                "type": "string",
+                                "x-required": true,
+                                "description": "Eagle.io parameter node ID (24-char alphanumeric or @customId)",
+                                "x-position": 2
+                            },
+                            "direction": {
+                                "enum": [
+                                    "to_eagleio",
+                                    "from_eagleio",
+                                    "both"
+                                ],
+                                "title": "Direction",
+                                "x-name": "direction",
+                                "x-hidden": false,
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "x-required": false,
+                                "description": "Data sync direction",
+                                "default": "both",
+                                "x-position": 3
+                            },
+                            "source_app_key": {
+                                "title": "Source App Key",
+                                "x-name": "source_app_key",
+                                "x-hidden": false,
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "x-required": false,
+                                "description": "Doover app key to read the tag from (for outbound). If not set, reads from own tags",
+                                "default": "",
+                                "x-position": 4
+                            }
+                        },
+                        "additionalElements": true,
+                        "required": [
+                            "tag_name",
+                            "eagle.io_node_id"
+                        ],
+                        "x-collapsible": true,
+                        "x-defaultCollapsed": false
+                    }
+                },
+                "dv_proc_subscriptions": {
+                    "title": "Subscription",
+                    "x-name": "dv_proc_subscriptions",
+                    "x-hidden": false,
+                    "type": "array",
+                    "x-required": true,
+                    "description": "A list of channels to subscribe to.",
+                    "x-position": 5,
+                    "items": {
+                        "title": "Channel Subscription",
+                        "x-name": "dv_proc_subscription",
+                        "x-hidden": false,
+                        "type": "string",
+                        "x-required": true,
+                        "description": "The name of the channel to subscribe to"
+                    }
+                },
+                "dv_proc_schedules": {
+                    "title": "Schedule",
+                    "x-name": "dv_proc_schedules",
+                    "x-hidden": false,
+                    "format": "doover-schedule",
+                    "type": "string",
+                    "x-required": true,
+                    "description": "Specify a schedule to run this task.",
+                    "x-position": 6
                 }
             },
             "additionalElements": true,
             "required": [
-                "a_funny_message",
-                "simulator_app_key"
+                "api_key",
+                "tag_mappings",
+                "dv_proc_subscriptions",
+                "dv_proc_schedules"
             ]
         },
-        "organisation_id": "FIX-ME"
+        "id": "145418106842417410",
+        "banner_url": null
     }
 }
